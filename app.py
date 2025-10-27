@@ -5,12 +5,11 @@ from io import BytesIO
 from PIL import Image
 
 # --- Configuration ---
-# IMPORTANT: Use st.secrets["GEMINI_API_KEY"] in a deployed app for security
-# For local testing, replace the placeholder key below
-API_KEY = "AIzaSyDxlzYbOluOFAdt7-2EPM-BlhQ77ysHkQg" 
+# IMPORTANT: In a real app, use st.secrets["GEMINI_API_KEY"] for security!
+API_KEY = "AIzaSyDxlzYbOluOFAdt7-2EPM-BlhQ77ysHkQg" # Replace with your actual key or use Streamlit Secrets
 API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent"
 
-# Set a helpful system instruction to guide the model's behavior
+# --- System Prompt (Unchanged as it contains all required report structure) ---
 SYSTEM_PROMPT = (
     "You are a highly skilled, board-certified electrophysiologist (cardiologist specializing in "
     "ECG analysis). Your task is to analyze the provided Electrocardiogram (ECG) scan image. "
@@ -24,15 +23,16 @@ SYSTEM_PROMPT = (
     "Format the response using Markdown for clear readability. Start with the Interpretation/Diagnosis section."
 )
 
-
+# --- Helper Functions ---
 def image_to_base64(img_bytes):
     """Converts image bytes to base64 string for the API payload."""
     return base64.b64encode(img_bytes).decode('utf-8')
 
-
+@st.cache_data(show_spinner=False) # Cache the API call based on image hash/data
 def analyze_ecg_with_gemini(image_base64_data):
     """Calls the API to analyze the ECG image."""
     
+    # ... (API Payload and Request logic remains the same)
     payload = {
         "contents": [
             {
@@ -55,10 +55,7 @@ def analyze_ecg_with_gemini(image_base64_data):
         }
     }
 
-    headers = {
-        "Content-Type": "application/json"
-    }
-
+    headers = { "Content-Type": "application/json" }
     api_endpoint = API_URL
     if API_KEY:
         api_endpoint += f"?key={API_KEY}"
@@ -68,21 +65,19 @@ def analyze_ecg_with_gemini(image_base64_data):
         response.raise_for_status()
         
         result = response.json()
-        
-        # Safe extraction of the generated text
         generated_text = result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', 'Analysis failed or no text generated.')
         return generated_text
 
     except requests.exceptions.RequestException as e:
-        return f"🚨 **API Request Error**: Failed to connect to the model API. Please check your API key and network connection. Details: {e}"
+        return f"🚨 **API Request Error**: Failed to connect to the model API. Details: {e}"
     except Exception as e:
         return f"🚨 **General Error**: An unexpected error occurred during processing. Details: {e}"
 
+# --- Streamlit UI Layout (Cleaned up, single-button flow) ---
 
-# --- Streamlit UI Layout (Vibrant, Professional, Interactive) ---
 st.set_page_config(page_title="Cardiology Scan Analyst", layout="wide")
 
-# Highly customized CSS for a vibrant, modern, and user-friendly feel
+# Customized CSS (Same attractive style as before)
 st.markdown("""
 <style>
 /* Overall Page Styling with a subtle gradient */
@@ -90,7 +85,7 @@ st.markdown("""
     background: linear-gradient(135deg, #e3f2fd 10%, #ffffff 100%); /* Very light blue/white gradient */
 }
 
-/* Customizing the main header (Eye-catching and professional) */
+/* Customizing the main header */
 .main-header-custom {
     font-size: 3.2em;
     font-weight: 900;
@@ -103,7 +98,7 @@ st.markdown("""
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Styling the main upload and analysis button (Highly visible and interactive) */
+/* Styling the main upload and analysis button (Single button, high contrast) */
 .stButton>button {
     background-color: #6a1b9a; /* Deep Purple - High contrast for action */
     color: white;
@@ -112,7 +107,7 @@ st.markdown("""
     font-size: 1.3em;
     font-weight: bold;
     border: none;
-    width: 100%; /* Make button fill its column */
+    width: 100%; 
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
     transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
 }
@@ -152,79 +147,76 @@ h2 {
 </style>
 """, unsafe_allow_html=True)
 
-# Main Title (Removed the generic prompt text)
+# Main Title
 st.markdown('<p class="main-header-custom">🫀 Cardiology Scan Analyst</p>', unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center; color: #6a1b9a;'>**Upload your ECG scan for an immediate, detailed electrophysiology report.**</h4>", unsafe_allow_html=True)
 
-# File Uploader
+# Initialize Session State
+if 'analysis_report' not in st.session_state:
+    st.session_state['analysis_report'] = None
+if 'uploaded_file_data' not in st.session_state:
+    st.session_state['uploaded_file_data'] = None
+
+# --- Main App Logic ---
+
+# 1. File Uploader
 uploaded_file = st.file_uploader(
     "1️⃣ Upload your 12-Lead ECG Image (PNG, JPG)", 
     type=["png", "jpg", "jpeg"],
-    accept_multiple_files=False
+    accept_multiple_files=False,
+    # Clear analysis if a new file is uploaded
+    on_change=lambda: st.session_state.update(analysis_report=None, uploaded_file_data=None)
 )
 
-# Interactive Layout using three columns for better structure
-setup_col, upload_col, action_col = st.columns([1, 2, 1])
+analysis_col, results_col = st.columns([1, 2])
 
-# Use the column space for clear instruction/interaction
-with setup_col:
+with analysis_col:
     st.markdown("---")
-    st.markdown("### 2️⃣ Review & Analyze")
-    st.markdown("Once uploaded, verify the image on the right. Then click the **Analyze** button to start the AI evaluation.")
-    st.markdown("---")
+    st.markdown("### 2️⃣ Image Preview")
     
-    # Analysis Button placement in a separate column for better visibility
     if uploaded_file is not None:
-        if st.button("▶️ Generate Detailed Analysis"):
-            # Logic for analysis is placed here, but the spinner feedback is crucial for UX
-            pass # The main logic runs below in the `if st.button` block
-
-with upload_col:
-    if uploaded_file is not None:
-        file_bytes = uploaded_file.read()
-
-        st.subheader("🖼️ Uploaded ECG Scan Preview")
-        image = Image.open(BytesIO(file_bytes))
+        # Read file bytes only once
+        file_bytes = uploaded_file.getvalue()
+        st.session_state['uploaded_file_data'] = file_bytes
         
-        # Using use_container_width for proper responsiveness
+        image = Image.open(BytesIO(file_bytes))
         st.image(image, caption="Uploaded ECG", use_container_width=True) 
 
     else:
-        st.info("⬆️ Awaiting ECG file upload. Please select an image in step 1 to continue.")
-        st.subheader("Image Preview")
+        st.info("⬆️ Please upload an image to proceed.")
 
-
-# Main Logic for Analysis (Placed outside columns for full-width feedback)
-if uploaded_file is not None and 'analysis_report' not in st.session_state:
-    # This ensures the button in setup_col triggers the logic
-    if st.button("Generate Analysis Report", key="run_analysis_key"): 
-        
-        image_base64 = image_to_base64(file_bytes)
-
-        # Interactive Feedback using st.spinner
-        with st.spinner('🔬 Performing professional electrophysiology analysis... This may take a moment.'):
-            analysis_report = analyze_ecg_with_gemini(image_base64)
-        
-        st.session_state['analysis_report'] = analysis_report
-        st.session_state['uploaded_file'] = uploaded_file.name
-        # Rerun to display results immediately
-        st.experimental_rerun()
-
-
-st.markdown("---")
-
-# Results Section (Full width)
-st.subheader("📝 Electrophysiology Analysis Report")
-
-if 'analysis_report' in st.session_state:
-    # Display the generated report
-    st.markdown(st.session_state['analysis_report'])
+    st.markdown("---")
     
-    # Optional: Add a clear button to restart/clear results
-    if st.button("Clear Results and Start New Analysis", key="clear_results"):
-        for key in ['analysis_report', 'uploaded_file']:
-            if key in st.session_state:
-                del st.session_state[key]
-        st.experimental_rerun()
-else:
-    st.info("The professional analysis report, including metrics, diagnosis, and lifestyle recommendations, will appear here after analysis.")
+    # 3. Single Analyze Button (Conditional)
+    if uploaded_file is not None:
+        # Check if we need to run analysis or if results are already present
+        if st.session_state['analysis_report'] is None:
+            if st.button("▶️ Generate Detailed Analysis", key="run_analysis_key"):
+                with st.spinner('🔬 Performing professional electrophysiology analysis...'):
+                    # Call the cached analysis function
+                    image_base64 = image_to_base64(st.session_state['uploaded_file_data'])
+                    report = analyze_ecg_with_gemini(image_base64)
+                    st.session_state['analysis_report'] = report
+                    # Rerun to display results without another button click
+                    st.experimental_rerun()
+        else:
+             st.success("✅ Analysis Complete! See the report on the right.")
+             if st.button("Clear Results and Start New Analysis", key="clear_results"):
+                st.session_state['analysis_report'] = None
+                st.session_state['uploaded_file_data'] = None
+                analyze_ecg_with_gemini.clear() # Clear cache
+                st.experimental_rerun()
+    else:
+        st.button("Upload Image First", disabled=True)
+
+
+with results_col:
+    st.subheader("📝 Electrophysiology Analysis Report")
+    
+    # 4. Results Display
+    if st.session_state['analysis_report']:
+        st.markdown("---")
+        # Display the generated report
+        st.markdown(st.session_state['analysis_report'])
+    else:
+        st.info("The professional analysis report, including metrics, diagnosis, and lifestyle recommendations, will appear here after clicking 'Generate Detailed Analysis'.")
