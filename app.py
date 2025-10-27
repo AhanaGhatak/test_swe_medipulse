@@ -11,7 +11,6 @@ API_KEY = "AIzaSyDxlzYbOluOFAdt7-2EPM-BlhQ77ysHkQg" # Replace with your actual k
 API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent"
 
 # Set a helpful system instruction to guide the model's behavior
-# MODIFIED: Added instructions for the new lifestyle section and the one-sentence diagnosis.
 SYSTEM_PROMPT = (
     "You are a highly skilled, board-certified electrophysiologist (cardiologist specializing in "
     "ECG analysis). Your task is to analyze the provided Electrocardiogram (ECG) scan image. "
@@ -42,12 +41,11 @@ def analyze_ecg_with_gemini(image_base64_data):
                 "parts": [
                     {
                         "inlineData": {
-                            "mimeType": "image/png",  # Assuming PNG/JPEG, but PNG is safer
+                            "mimeType": "image/png",
                             "data": image_base64_data
                         }
                     },
                     {
-                        # MODIFIED: Request for a professional, structured report.
                         "text": "Analyze this ECG scan and provide a professional, structured electrophysiology report as instructed."
                     }
                 ]
@@ -62,19 +60,16 @@ def analyze_ecg_with_gemini(image_base64_data):
         "Content-Type": "application/json"
     }
 
-    # If the API key is provided, include it in the URL
     api_endpoint = API_URL
     if API_KEY:
         api_endpoint += f"?key={API_KEY}"
 
     try:
-        # Use requests for the Python backend environment of Streamlit
         response = requests.post(api_endpoint, headers=headers, json=payload)
-        response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
+        response.raise_for_status()
         
         result = response.json()
         
-        # Extract the generated text
         generated_text = result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', 'Analysis failed or no text generated.')
         return generated_text
 
@@ -84,57 +79,85 @@ def analyze_ecg_with_gemini(image_base64_data):
         return f"🚨 **General Error**: An unexpected error occurred during processing. Details: {e}"
 
 
-# --- Streamlit UI Layout ---
+# --- Streamlit UI Layout (More Colourful and Attractive) ---
 st.set_page_config(page_title="Professional ECG Analyst", layout="wide")
 
-# MODIFIED: Changed colors, removed "Gemini" from class names, and adjusted text for better aesthetics.
+# MODIFIED: Enhanced CSS for a modern, attractive, and medical/professional look
 st.markdown("""
 <style>
-/* Customizing the main header and overall look */
+/* Overall Page Styling */
+.stApp {
+    background-color: #f0f2f6; /* Very light blue/grey background */
+}
+
+/* Customizing the main header */
 .main-header-custom {
-    font-size: 2.5em;
+    font-size: 2.8em;
     font-weight: 800;
-    color: #007bff; /* Primary Blue for Medical Feel */
+    color: #004d99; /* Deep Medical Blue */
     text-align: center;
     margin-bottom: 25px;
-    padding-bottom: 10px;
-    border-bottom: 3px solid #007bff;
+    padding: 10px 0;
+    border-bottom: 5px solid #007bff; /* Bright blue underline */
+    letter-spacing: 1.5px;
 }
-/* Styling the main upload and analysis button */
+
+/* Styling the main upload and analysis button (Vibrant) */
 .stButton>button {
-    background-color: #28a745; /* Green for GO/Analyze */
+    background-color: #17a2b8; /* Teal/Cyan - Professional but vibrant */
     color: white;
     border-radius: 10px;
-    padding: 10px 20px;
-    font-size: 1.1em;
+    padding: 12px 25px;
+    font-size: 1.2em;
     font-weight: bold;
     border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: background-color 0.3s, transform 0.2s;
 }
 .stButton>button:hover {
-    background-color: #218838; /* Darker green on hover */
-    transform: scale(1.02);
+    background-color: #138496; /* Darker teal on hover */
+    transform: translateY(-2px); /* Slight lift effect */
 }
-/* Info/Awaiting boxes */
+
+/* Info/Awaiting boxes (Clean and Clear) */
 .stAlert div[data-testid="stAlert"] {
-    background-color: #f8f9fa; /* Light background for info */
-    border-left: 5px solid #007bff;
-    color: #495057;
+    background-color: #e6f7ff; /* Very light blue background for info */
+    border-left: 6px solid #007bff;
+    color: #004d99;
     font-size: 1.05em;
     padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
-/* Subheaders */
+
+/* Subheaders (Professional look for sections) */
 h2 {
-    color: #495057; /* Darker grey for content titles */
-    border-bottom: 2px solid #ced4da;
-    padding-bottom: 5px;
+    color: #004d99; /* Deep Medical Blue */
+    border-bottom: 2px solid #a8c0d8; /* Subtle grey-blue separator */
+    padding-bottom: 8px;
+    margin-top: 20px;
 }
+
+/* Customizing the file uploader label */
+label[data-testid="stFileUploadDropzone"] {
+    color: #004d99 !important;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Styling the analysis report section */
+.stMarkdown h4 {
+    color: #28a745; /* Green for section titles within the report */
+    border-left: 5px solid #28a745;
+    padding-left: 10px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# MODIFIED: Changed title and main description, removing "Gemini".
-st.markdown('<p class="main-header-custom">🩺 Professional ECG Scan Analyst</p>', unsafe_allow_html=True)
-st.markdown("A specialized tool for detailed, structured analysis of uploaded Electrocardiogram (ECG) scans, providing metrics, morphology, interpretation, and recommendations.")
+# MODIFIED: Changed title and main description
+st.markdown('<p class="main-header-custom">🩺 Professional Cardiology Analyst</p>', unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; color: #495057;'>**Upload a 12-Lead ECG scan for a structured electrophysiology report.**</h4>", unsafe_allow_html=True)
 
 # File Uploader
 uploaded_file = st.file_uploader(
@@ -151,20 +174,17 @@ with analysis_col:
         file_bytes = uploaded_file.read()
 
         # Display the uploaded image
-        st.subheader("Uploaded ECG Scan")
+        st.subheader("🖼️ Uploaded ECG Scan")
         image = Image.open(BytesIO(file_bytes))
         st.image(image, caption="Uploaded ECG", use_column_width=True)
 
         # Analysis Button
-        # MODIFIED: Changed button text
-        if st.button("Generate Detailed Analysis"):
+        if st.button("▶️ Generate Detailed Analysis"):
             
             # Convert image to base64
             image_base64 = image_to_base64(file_bytes)
 
-            with st.spinner('Performing professional ECG analysis... This may take a moment.'):
-                # Call the analysis function
-                # MODIFIED: Removed 'gemini' from function call display
+            with st.spinner('🔬 Performing professional ECG analysis... This may take a moment.'):
                 analysis_report = analyze_ecg_with_gemini(image_base64)
             
             # Store the result in session state
@@ -172,16 +192,14 @@ with analysis_col:
             st.session_state['uploaded_file'] = uploaded_file.name
     
     else:
-        # Display an empty placeholder if no file is uploaded
-        st.info("Awaiting ECG file upload. Please select an image to begin the analysis.")
+        st.info("⬆️ Awaiting ECG file upload. Please select an image to begin the analysis.")
 
 
 with results_col:
-    # MODIFIED: Changed subheader text
-    st.subheader("Electrophysiology Analysis Report")
+    st.subheader("📝 Electrophysiology Analysis Report")
     if 'analysis_report' in st.session_state:
         st.markdown("---")
         # Display the generated report
         st.markdown(st.session_state['analysis_report'])
     else:
-        st.info("The professional analysis report, including metrics, diagnosis, and recommendations, will appear here after you upload and analyze an ECG scan.")
+        st.info("The professional analysis report, including metrics, diagnosis, and lifestyle recommendations, will appear here after you upload and analyze an ECG scan.")
