@@ -79,51 +79,53 @@ def analyze_ecg_with_gemini(image_base64_data):
         return f"🚨 **General Error**: An unexpected error occurred during processing. Details: {e}"
 
 
-# --- Streamlit UI Layout (More Colourful and Attractive) ---
+# --- Streamlit UI Layout (Vibrant and Professional) ---
 st.set_page_config(page_title="Professional ECG Analyst", layout="wide")
 
 # MODIFIED: Enhanced CSS for a modern, attractive, and medical/professional look
 st.markdown("""
 <style>
-/* Overall Page Styling */
+/* Overall Page Styling with a Subtle Gradient */
 .stApp {
-    background-color: #f0f2f6; /* Very light blue/grey background */
+    background: linear-gradient(135deg, #e0f7fa 10%, #f0f8ff 100%); /* Light, calming gradient */
 }
 
-/* Customizing the main header */
+/* Customizing the main header (Vibrant Blue/Purple) */
 .main-header-custom {
-    font-size: 2.8em;
-    font-weight: 800;
-    color: #004d99; /* Deep Medical Blue */
+    font-size: 3.0em;
+    font-weight: 900;
+    color: #4A148C; /* Deep Purple */
     text-align: center;
     margin-bottom: 25px;
     padding: 10px 0;
-    border-bottom: 5px solid #007bff; /* Bright blue underline */
-    letter-spacing: 1.5px;
+    border-bottom: 5px solid #00BCD4; /* Cyan/Teal Underline */
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Styling the main upload and analysis button (Vibrant) */
+/* Styling the main upload and analysis button (Action Green) */
 .stButton>button {
-    background-color: #17a2b8; /* Teal/Cyan - Professional but vibrant */
+    background-color: #388E3C; /* Success Green */
     color: white;
-    border-radius: 10px;
-    padding: 12px 25px;
+    border-radius: 12px;
+    padding: 15px 30px;
     font-size: 1.2em;
     font-weight: bold;
     border: none;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s, transform 0.2s;
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
 }
 .stButton>button:hover {
-    background-color: #138496; /* Darker teal on hover */
-    transform: translateY(-2px); /* Slight lift effect */
+    background-color: #2E7D32; /* Darker green on hover */
+    transform: translateY(-3px); /* Prominent lift effect */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
 }
 
-/* Info/Awaiting boxes (Clean and Clear) */
+/* Info/Awaiting boxes (Clean and Clear, with a Teal accent) */
 .stAlert div[data-testid="stAlert"] {
-    background-color: #e6f7ff; /* Very light blue background for info */
-    border-left: 6px solid #007bff;
-    color: #004d99;
+    background-color: #e0f7fa; /* Light Teal background for info */
+    border-left: 6px solid #00BCD4; /* Teal border */
+    color: #006064; /* Dark Teal text */
     font-size: 1.05em;
     padding: 15px;
     border-radius: 8px;
@@ -132,32 +134,32 @@ st.markdown("""
 
 /* Subheaders (Professional look for sections) */
 h2 {
-    color: #004d99; /* Deep Medical Blue */
-    border-bottom: 2px solid #a8c0d8; /* Subtle grey-blue separator */
-    padding-bottom: 8px;
-    margin-top: 20px;
+    color: #4A148C; /* Deep Purple */
+    border-bottom: 3px solid #CFD8DC; /* Subtle light grey separator */
+    padding-bottom: 10px;
+    margin-top: 25px;
 }
 
 /* Customizing the file uploader label */
 label[data-testid="stFileUploadDropzone"] {
-    color: #004d99 !important;
+    color: #4A148C !important;
     font-weight: bold;
     font-size: 1.1em;
 }
 
 /* Styling the analysis report section */
 .stMarkdown h4 {
-    color: #28a745; /* Green for section titles within the report */
-    border-left: 5px solid #28a745;
+    color: #00BCD4; /* Teal for section titles within the report */
+    border-left: 5px solid #388E3C; /* Green accent */
     padding-left: 10px;
+    margin-top: 20px;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# MODIFIED: Changed title and main description
 st.markdown('<p class="main-header-custom">🩺 Professional Cardiology Analyst</p>', unsafe_allow_html=True)
-st.markdown("<h4 style='text-align: center; color: #495057;'>**Upload a 12-Lead ECG scan for a structured electrophysiology report.**</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; color: #6A1B9A;'>**Upload a 12-Lead ECG scan for a structured electrophysiology report.**</h4>", unsafe_allow_html=True)
 
 # File Uploader
 uploaded_file = st.file_uploader(
@@ -170,24 +172,23 @@ analysis_col, results_col = st.columns([1, 2])
 
 with analysis_col:
     if uploaded_file is not None:
-        # Read the file bytes
         file_bytes = uploaded_file.read()
 
         # Display the uploaded image
         st.subheader("🖼️ Uploaded ECG Scan")
         image = Image.open(BytesIO(file_bytes))
-        st.image(image, caption="Uploaded ECG", use_column_width=True)
+        
+        # FIX: Replacing deprecated use_column_width with use_container_width
+        st.image(image, caption="Uploaded ECG", use_container_width=True) 
 
         # Analysis Button
         if st.button("▶️ Generate Detailed Analysis"):
             
-            # Convert image to base64
             image_base64 = image_to_base64(file_bytes)
 
             with st.spinner('🔬 Performing professional ECG analysis... This may take a moment.'):
                 analysis_report = analyze_ecg_with_gemini(image_base64)
             
-            # Store the result in session state
             st.session_state['analysis_report'] = analysis_report
             st.session_state['uploaded_file'] = uploaded_file.name
     
