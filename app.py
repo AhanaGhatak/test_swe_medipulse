@@ -7,7 +7,7 @@ from PIL import Image
 # --- Configuration ---
 # IMPORTANT: In a real app, use st.secrets["GEMINI_API_KEY"] for security!
 API_KEY = "AIzaSyDxlzYbOluOFAdt7-2EPM-BlhQ77ysHkQg" # Replace with your actual key or use Streamlit Secrets
-API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-preview-09-2025:generateContent"
+API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
 # --- System Prompt (UPDATED for Clear Diagnosis) ---
 SYSTEM_PROMPT = (
